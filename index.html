@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Creador de redirecciones 301</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #17202a;
+      --muted: #637083;
+      --line: #d9dee8;
+      --primary: #1f7a5f;
+      --primary-dark: #155a45;
+      --danger: #b42318;
+      --shadow: 0 14px 36px rgba(18, 32, 52, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      min-height: 42px;
+      padding: 0 16px;
+    }
+
+    button:focus-visible,
+    textarea:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgba(31, 122, 95, 0.25);
+      outline-offset: 2px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary {
+      background: #e9eef5;
+      color: var(--text);
+    }
+
+    .secondary:hover {
+      background: #dde5ef;
+    }
+
+    .danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid #f0bbb6;
+    }
+
+    .danger:hover {
+      background: #fff1ef;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    #groups {
+      display: grid;
+      gap: 0;
+    }
+
+    .group {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .group:last-child {
+      border-bottom: 0;
+    }
+
+    .group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .group-title {
+      font-weight: 800;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      font: 16px/1.45 Arial, Helvetica, sans-serif;
+      padding: 12px;
+    }
+
+    textarea {
+      min-height: 170px;
+      resize: vertical;
+    }
+
+    input {
+      min-height: 48px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 20px, 1120px);
+        padding: 22px 0;
+      }
+
+      header,
+      .toolbar,
+      .group-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions,
+      .toolbar .actions {
+        width: 100%;
+      }
+
+      button {
+        flex: 1 1 180px;
+      }
+
+      .fields {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Redirecciones 301</h1>
+        <p>Pega varias URLs de origen y asignales una URL destino. Luego descarga el CSV listo.</p>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="addGroup" type="button">Agregar grupo</button>
+        <button class="primary" id="downloadCsv" type="button">Descargar CSV</button>
+      </div>
+    </header>
+
+    <section class="panel" aria-label="Creador de CSV">
+      <div class="toolbar">
+        <p class="status" id="status">0 redirecciones listas</p>
+        <div class="actions">
+          <button class="secondary" id="clearAll" type="button">Limpiar todo</button>
+        </div>
+      </div>
+      <div id="groups"></div>
+    </section>
+  </main>
+
+  <template id="groupTemplate">
+    <article class="group">
+      <div class="group-head">
+        <div class="group-title"></div>
+        <button class="danger remove-group" type="button">Eliminar grupo</button>
+      </div>
+      <div class="fields">
+        <label>
+          URLs de origen
+          <textarea class="sources" placeholder="https://sitio.com/url-antigua-1&#10;https://sitio.com/url-antigua-2"></textarea>
+          <span class="hint">Una URL por linea.</span>
+        </label>
+        <label>
+          URL destino
+          <input class="destination" type="url" placeholder="https://sitio.com/url-nueva">
+          <span class="hint">Esta URL se aplicara a todas las URLs de origen del grupo.</span>
+        </label>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const groupsEl = document.querySelector("#groups");
+    const template = document.querySelector("#groupTemplate");
+    const statusEl = document.querySelector("#status");
+    const addGroupBtn = document.querySelector("#addGroup");
+    const downloadBtn = document.querySelector("#downloadCsv");
+    const clearAllBtn = document.querySelector("#clearAll");
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+
+    function getRows() {
+      return [...groupsEl.querySelectorAll(".group")].flatMap((group) => {
+        const destination = group.querySelector(".destination").value.trim();
+        const sources = group.querySelector(".sources").value
+          .split(/\r?\n/)
+          .map((url) => url.trim())
+          .filter(Boolean);
+
+        if (!destination) {
+          return [];
+        }
+
+        return sources.map((source) => [source, destination]);
+      });
+    }
+
+    function updateTitles() {
+      const groups = [...groupsEl.querySelectorAll(".group")];
+      groups.forEach((group, index) => {
+        group.querySelector(".group-title").textContent = `Grupo ${index + 1}`;
+        group.querySelector(".remove-group").hidden = groups.length === 1;
+      });
+    }
+
+    function updateStatus() {
+      const rows = getRows();
+      const count = rows.length;
+      statusEl.textContent = `${count} ${count === 1 ? "redireccion lista" : "redirecciones listas"}`;
+    }
+
+    function addGroup() {
+      const group = template.content.firstElementChild.cloneNode(true);
+      group.addEventListener("input", updateStatus);
+      group.querySelector(".remove-group").addEventListener("click", () => {
+        group.remove();
+        updateTitles();
+        updateStatus();
+      });
+      groupsEl.append(group);
+      updateTitles();
+      updateStatus();
+    }
+
+    function downloadCsv() {
+      const rows = getRows();
+
+      if (!rows.length) {
+        statusEl.textContent = "Agrega al menos una URL de origen y una URL destino.";
+        return;
+      }
+
+      const lines = [
+        ["URL de origen", "URL de destino"],
+        ...rows,
+      ].map((row) => row.map(csvEscape).join(","));
+
+      const blob = new Blob([`\uFEFF${lines.join("\n")}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "redirecciones-301.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      statusEl.textContent = `CSV creado con ${rows.length} ${rows.length === 1 ? "redireccion" : "redirecciones"}.`;
+    }
+
+    addGroupBtn.addEventListener("click", addGroup);
+    downloadBtn.addEventListener("click", downloadCsv);
+    clearAllBtn.addEventListener("click", () => {
+      groupsEl.replaceChildren();
+      addGroup();
+    });
+
+    addGroup();
+  </script>
+</body>
+</html>
