@@ -67,6 +67,11 @@
       padding: 0 16px;
     }
 
+    button[aria-pressed="true"] {
+      background: var(--primary);
+      color: white;
+    }
+
     button:focus-visible,
     textarea:focus-visible,
     input:focus-visible {
@@ -131,9 +136,34 @@
       font-size: 14px;
     }
 
+    .mode-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+
+    .mode {
+      display: none;
+    }
+
+    .mode.active {
+      display: block;
+    }
+
     #groups {
       display: grid;
       gap: 0;
+    }
+
+    .bulk-mode {
+      padding: 18px;
+    }
+
+    .bulk-pairs {
+      min-height: 320px;
     }
 
     .group {
@@ -245,7 +275,20 @@
           <button class="secondary" id="clearAll" type="button">Limpiar todo</button>
         </div>
       </div>
-      <div id="groups"></div>
+      <div class="mode-switch" aria-label="Modalidad">
+        <button class="secondary" id="groupModeBtn" type="button" aria-pressed="true">Destino comun</button>
+        <button class="secondary" id="pairsModeBtn" type="button" aria-pressed="false">Pares origen/destino</button>
+      </div>
+      <div class="mode active" id="groupMode">
+        <div id="groups"></div>
+      </div>
+      <div class="mode bulk-mode" id="pairsMode">
+        <label>
+          URLs origen y destino
+          <textarea class="bulk-pairs" id="bulkPairs" placeholder="https://sitio.com/url-antigua, https://sitio.com/url-nueva&#10;https://sitio.com/otra-url-antigua, https://sitio.com/otra-url-nueva"></textarea>
+          <span class="hint">Una redireccion por linea, separando origen y destino con coma.</span>
+        </label>
+      </div>
     </section>
   </main>
 
@@ -277,13 +320,19 @@
     const addGroupBtn = document.querySelector("#addGroup");
     const downloadBtn = document.querySelector("#downloadCsv");
     const clearAllBtn = document.querySelector("#clearAll");
+    const groupModeBtn = document.querySelector("#groupModeBtn");
+    const pairsModeBtn = document.querySelector("#pairsModeBtn");
+    const groupMode = document.querySelector("#groupMode");
+    const pairsMode = document.querySelector("#pairsMode");
+    const bulkPairs = document.querySelector("#bulkPairs");
+    let currentMode = "group";
 
     function csvEscape(value) {
       const text = String(value ?? "");
       return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
     }
 
-    function getRows() {
+    function getGroupRows() {
       return [...groupsEl.querySelectorAll(".group")].flatMap((group) => {
         const destination = group.querySelector(".destination").value.trim();
         const sources = group.querySelector(".sources").value
@@ -297,6 +346,40 @@
 
         return sources.map((source) => [source, destination]);
       });
+    }
+
+    function getPairRows() {
+      return bulkPairs.value
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const commaIndex = line.indexOf(",");
+
+          if (commaIndex === -1) {
+            return null;
+          }
+
+          const source = line.slice(0, commaIndex).trim();
+          const destination = line.slice(commaIndex + 1).trim();
+          return source && destination ? [source, destination] : null;
+        })
+        .filter(Boolean);
+    }
+
+    function getRows() {
+      return currentMode === "pairs" ? getPairRows() : getGroupRows();
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const isPairs = mode === "pairs";
+      groupMode.classList.toggle("active", !isPairs);
+      pairsMode.classList.toggle("active", isPairs);
+      groupModeBtn.setAttribute("aria-pressed", String(!isPairs));
+      pairsModeBtn.setAttribute("aria-pressed", String(isPairs));
+      addGroupBtn.hidden = isPairs;
+      updateStatus();
     }
 
     function updateTitles() {
@@ -350,7 +433,16 @@
 
     addGroupBtn.addEventListener("click", addGroup);
     downloadBtn.addEventListener("click", downloadCsv);
+    groupModeBtn.addEventListener("click", () => setMode("group"));
+    pairsModeBtn.addEventListener("click", () => setMode("pairs"));
+    bulkPairs.addEventListener("input", updateStatus);
     clearAllBtn.addEventListener("click", () => {
+      if (currentMode === "pairs") {
+        bulkPairs.value = "";
+        updateStatus();
+        return;
+      }
+
       groupsEl.replaceChildren();
       addGroup();
     });
